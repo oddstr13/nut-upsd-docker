@@ -58,7 +58,7 @@ else
     printf "Skipped upsmon.conf config"
 fi
 
-chgrp -R nut /etc/nut /dev/bus/usb
+chgrp -R nut /etc/nut
 chmod -R o-rwx /etc/nut
 
 /usr/sbin/upsdrvctl start

@@ -4,8 +4,7 @@ FROM alpine:3.13
 ARG VCS_REF
 ARG BUILD_DATE
 
-ENV NUT_VERSION 2.7.4
-ENV NUT_SHA256 "980e82918c52d364605c0703a5dcf01f74ad2ef06e3d365949e43b7d406d25a7"
+ENV NUT_VERSION master
 
 ENV UPS_NAME="ups"
 ENV UPS_DESC="UPS"
@@ -44,15 +43,15 @@ RUN set -ex; \
         nss-dev \
         neon-dev \
 		build-base \
+        git \
+        python3 \
+        avahi-dev \
 	; \
 	# download and extract
-	cd /tmp; \
-    printf '%s  nut-2.7.4.tar.gz\n' "$NUT_SHA256" > nut-$NUT_VERSION.tar.gz.sha256; \
-	wget https://www.networkupstools.org/source/2.7/nut-$NUT_VERSION.tar.gz; \
-	tar xfz nut-$NUT_VERSION.tar.gz; \
-    sha256sum -c -w nut-$NUT_VERSION.tar.gz.sha256; \
-	cd nut-$NUT_VERSION \
-	; \
+    git clone --depth=2 https://github.com/networkupstools/nut /tmp/nut; \
+    cd /tmp/nut; \
+    # prepare
+    ./autogen.sh; \
 	# build
 	./configure \
 		--prefix=/usr \
@@ -62,6 +61,8 @@ RUN set -ex; \
 		--disable-static \
 		--with-all=no \
 		--with-usb=yes \
+        --with-serial=yes \
+        --with-avahi=yes \
 		--datadir=/usr/share/nut \
         --with-nss \
  		--with-openssl \
@@ -82,12 +83,12 @@ RUN set -ex; \
 	install -d -m 750 -o nut -g nut /var/run/nut \
 	; \
 	# cleanup
-	rm -r /tmp/nut-$NUT_VERSION.tar.gz /tmp/nut-$NUT_VERSION.tar.gz.sha256 /tmp/nut-$NUT_VERSION; \
-	rm -r /usr/share/man/man5 /usr/share/man/man8; \
+	rm -rf /tmp/nut-$NUT_VERSION.tar.gz /tmp/nut-$NUT_VERSION.tar.gz.sha256 /tmp/nut-$NUT_VERSION /tmp/nut; \
+	rm -rf /usr/share/man/man5 /usr/share/man/man8; \
 	apk del .build-deps
 
 COPY docker-entrypoint.sh /usr/local/bin/
-ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["docker-entrypoint.sh"]
 
 WORKDIR /var/run/nut
 
